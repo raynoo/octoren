@@ -1,7 +1,7 @@
 var express = require('express'),
     path = require('path'),
     hbs = require('express-hbs'),
-    routes = require('./routes/index'),
+    index = require('./routes/index'),
     contact = require('./routes/contact'),
     insta = require('./routes/insta'),
     logger = require('morgan'),
@@ -36,7 +36,7 @@ app.use(passport.session());
 
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/', routes);
+app.use('/', index);
 app.use('/contact', contact);
 app.use('/insta', insta);
 
