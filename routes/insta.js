@@ -8,11 +8,9 @@ router.get('/', function(req, res) {
   
   superagent.get(url, function(err, ires) {
     console.log(ires.res.body.meta);
-    return res.render('insta', {popular: ires.res.body.data});
-    
+    return res.render('insta', { popular: ires.res.body.data, title: 'Renu\'s Instagram Feed' });
   });
 
 });
 
 module.exports = router;
-
