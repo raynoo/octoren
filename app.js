@@ -1,6 +1,6 @@
 var express = require('express'),
     path = require('path'),
-    hbs = require('express-hbs'),
+    hbs = require('express-handlebars'),
     index = require('./routes/index'),
     contact = require('./routes/contact'),
     insta = require('./routes/insta'),
@@ -14,69 +14,43 @@ var express = require('express'),
     // favicon = require('static-favicon'),
     // cookieParser = require('cookie-parser'),
 
+// configure Express
+  // view engine setup
+  app.engine('hbs', hbs({ defaultLayout: 'layout', extname: '.hbs' }));
+  app.set('view engine', 'hbs');
 
-// view engine setup
-app.set('view engine', 'hbs');
-app.engine('hbs', hbs.express3({
-    defaultLayout: __dirname + '/views/layouts/layout.hbs',
-    layoutsDir: __dirname + '/views/layouts'
-}));
-app.set('views', __dirname + '/views');
+  // app.use(favicon());
+  // app.use(cookieParser());
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded());
+  app.use(logger('dev'));
 
+  app.use(express.static(path.join(__dirname, 'public')));
+  app.use('/', index);
+  app.use('/contact', contact);
+  app.use('/insta', insta);
 
-// app.use(favicon());
-// app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded());
-app.use(logger('dev'));
-
-//passport middleware init
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/', index);
-app.use('/contact', contact);
-app.use('/insta', insta);
-
+  //passport middleware init
+  app.use(passport.initialize());
+  app.use(passport.session());
 
 mongo.connect('mongodb://localhost/renudb');
-var Schema = mongo.Schema;
-var UserDetail = new Schema({
-      username: String,
-      password: String
-    }, {
-      collection: 'renudb'
-    });
-var UserDetails = mongo.model('renudb', UserDetail);
-
-
-
-app.get('/login', function(req, res) {
-  res.render('login');
+var db = mongo.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function callback() {
+  console.log('Connected to DB');
 });
 
-app.post('/login',
-  passport.authenticate('local', {
-    successRedirect: '/loginSuccess',
-    failureRedirect: '/loginFailure'
-  })
-);
- 
-app.get('/loginFailure', function(req, res, next) {
-    var err = new Error('Failed to authenticate');
-    res.render('login', {
-        message: err.message,
-        error: err
-    });
-});
- 
-app.get('/loginSuccess', function(req, res, next) {
-    res.render('index', {
-        message: 'Successfully authenticated'
-    });
-});
+var Schema = mongo.Schema,
+  UserDetail = new Schema({
+    username: String,
+    password: String
+  }, {
+    collection: 'renudb'
+  }),
+  UserDetails = mongo.model('renudb', UserDetail);
+
+
 
 passport.serializeUser(function(user, done) {
   done(null, user);
@@ -111,11 +85,43 @@ passport.use(new LocalStrategy(function(username, password, done) {
 
 
 
+app.get('/login', function(req, res) {
+  res.render('login', { title: 'Login' });
+});
+
+app.post('/login',
+  passport.authenticate('local', {
+    successRedirect: '/login/success',
+    failureRedirect: '/login/failure'
+  })
+);
+ 
+app.get('/login/failure', function(req, res, next) {
+  var err = new Error('Failed to authenticate');
+  res.render('login', {
+    message: err.message,
+    error: err
+  });
+});
+ 
+app.get('/login/success', function(req, res, next) {
+  res.render('index', {
+    message: 'Successfully authenticated'
+  });
+});
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login')
+}
+
+
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
+    err.title = 'Oops, an error!';
     next(err);
 });
 
@@ -127,8 +133,9 @@ if (app.get('env') === 'development') {
     app.use(function(err, req, res, next) {
         res.status(err.status || 500);
         res.render('error', {
-            message: err.message,
-            error: err
+          title: err.title,
+          message: err.message,
+          error: err
         });
     });
 }
@@ -138,8 +145,9 @@ if (app.get('env') === 'development') {
 app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error', {
-        message: err.message,
-        error: {}
+      title: err.title,
+      message: err.message,
+      error: {}
     });
 });
 
