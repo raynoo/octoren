@@ -9,30 +9,35 @@ var express = require('express'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     mongo = require('mongoose'),
+    expressValidator = require('express-validator'),
     app = express();
 
     // favicon = require('static-favicon'),
     // cookieParser = require('cookie-parser'),
 
-// configure Express
-  // view engine setup
-  app.engine('hbs', hbs({ defaultLayout: 'layout', extname: '.hbs' }));
-  app.set('view engine', 'hbs');
 
-  // app.use(favicon());
-  // app.use(cookieParser());
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded());
-  app.use(logger('dev'));
+/* configure Express */
+// view engine setup
+app.engine('hbs', hbs({ defaultLayout: 'layout', extname: '.hbs' }));
+app.set('view engine', 'hbs');
 
-  app.use(express.static(path.join(__dirname, 'public')));
-  app.use('/', index);
-  app.use('/contact', contact);
-  app.use('/insta', insta);
+// app.use(favicon());
+// app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded());
+app.use(expressValidator());
+app.use(logger('dev'));
 
-  //passport middleware init
-  app.use(passport.initialize());
-  app.use(passport.session());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/', index);
+app.use('/contact', contact);
+app.use('/insta', insta);
+
+
+/* Passport and MongoDB */
+//passport middleware init
+app.use(passport.initialize());
+app.use(passport.session());
 
 mongo.connect('mongodb://localhost/renudb');
 var db = mongo.connection;
@@ -49,8 +54,6 @@ var Schema = mongo.Schema,
     collection: 'renudb'
   }),
   UserDetails = mongo.model('renudb', UserDetail);
-
-
 
 passport.serializeUser(function(user, done) {
   done(null, user);
@@ -84,7 +87,7 @@ passport.use(new LocalStrategy(function(username, password, done) {
 }));
 
 
-
+/* Login Handlers */
 app.get('/login', function(req, res) {
   res.render('login', { title: 'Login' });
 });
@@ -147,7 +150,7 @@ app.use(function(err, req, res, next) {
     res.render('error', {
       title: err.title,
       message: err.message,
-      error: {}
+      error: err
     });
 });
 
