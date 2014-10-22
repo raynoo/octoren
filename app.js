@@ -10,6 +10,7 @@ var express = require('express'),
     LocalStrategy = require('passport-local').Strategy,
     mongo = require('mongoose'),
     expressValidator = require('express-validator'),
+    config = require('../config'),
     app = express();
 
     // favicon = require('static-favicon'),
@@ -39,7 +40,7 @@ app.use('/insta', insta);
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongo.connect('mongodb://localhost/renudb');
+mongo.connect(config.db.development);
 var db = mongo.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function callback() {
